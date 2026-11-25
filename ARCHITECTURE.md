@@ -43,3 +43,8 @@ SQLite WAL (store.py) <------------------------------------------------------+
 - **MultiHopper v1 REST API:** `devnet.multihopper.com/api/v1` (`mh_test_*`) and `multihopper.com/api/v1` (`mh_live_*`) — Transfers, Estimate, Hop Library, Route Templates CRUD, Webhooks, Usage.
 - **Solana JSON-RPC:** Mainnet-Beta / Devnet RPC for client-side transaction confirmation & Solana Explorer settlement verification.
 - **TRM Labs Compliance Gate:** Automatic on-chain screening enforced by MultiHopper mainnet smart contracts (`0.002 SOL/wallet` quoted via `/estimate`).
+
+<!-- AUTO-KG-STATS:START -->
+- **Knowledge Graph Live Sync:** `2026-11-25 16:08 UTC` | Nodes: **75** | Edges: **84** | Layers: **6** | Languages: `javascript, markdown, python`
+- **Top Connected Hubs:** `src/hoppay/models.py` (19), `tests/test_hoppay.py` (17), `src/hoppay/app.py` (9), `signer/broadcast_ordered.py` (7), `src/hoppay/store.py` (5)
+<!-- AUTO-KG-STATS:END -->
