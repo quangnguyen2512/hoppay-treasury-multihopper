@@ -1,0 +1,22 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+data/
+signer/node_modules/
+*.db
+*.db-shm
+*.db-wal
+*.egg-info/
+dist/
+build/
+
+# Local submission strategy notes & agent caches (keep private, do not push)
+SUBMISSION.md
+.env.local
+*.tsbuildinfo
+.ua/
+.understand-anything/
+APPLY_*.md
+LOOM_SCRIPTS*.md
+SUBMISSION*.md

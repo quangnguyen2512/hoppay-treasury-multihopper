@@ -1,0 +1,10 @@
+{
+  "name": "hoppay-solana-signer",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Non-custodial ordered Solana broadcaster for MultiHopper v1 API (HopPay Treasury)",
+  "dependencies": {
+    "@solana/web3.js": "^1.98.0"
+  }
+}

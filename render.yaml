@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: hoppay-treasury
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: MULTIHOPPER_ENV
+        value: demo
+      - key: MULTIHOPPER_API_KEY
+        sync: false
+      - key: MULTIHOPPER_WEBHOOK_SECRET
+        generateValue: true
+      - key: HOPPAY_ADMIN_TOKEN
+        generateValue: true
+      - key: SOLANA_RPC_URL
+        value: https://api.mainnet-beta.solana.com
+      - key: HOPPAY_MAX_SINGLE_RECIPIENT_USD
+        value: "10000"
+      - key: HOPPAY_APPROVAL_THRESHOLD_USD
+        value: "2500"
+      - key: HOPPAY_DB_PATH
+        value: /tmp/hoppay.db

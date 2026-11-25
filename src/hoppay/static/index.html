@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HopPay Treasury — Programmable Solana Payroll & Agent Router (MultiHopper)</title>
+  <style>
+    :root {
+      --bg:#070b14; --panel:#0f1629; --panel2:#16203a; --border:#253559;
+      --text:#ecf2ff; --muted:#8ea3cc; --accent:#38bdf8; --green:#22c55e;
+      --amber:#f59e0b; --red:#ef4444; --purple:#a855f7;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; background:var(--bg); color:var(--text); line-height:1.45; }
+    header { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; padding:14px 22px; background:var(--panel); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:20; }
+    .brand { font-weight:800; font-size:18px; letter-spacing:0.3px; }
+    .brand span { color:var(--accent); }
+    .hdr-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .pill { font-size:12px; padding:4px 10px; border-radius:999px; background:rgba(56,189,248,0.14); color:var(--accent); border:1px solid rgba(56,189,248,0.35); white-space:nowrap; }
+    .pill.green { background:rgba(34,197,94,0.14); color:#4ade80; border-color:rgba(34,197,94,0.35); }
+    .pill.amber { background:rgba(245,158,11,0.14); color:#fbbf24; border-color:rgba(245,158,11,0.35); }
+    .pill.red { background:rgba(239,68,68,0.14); color:#f87171; border-color:rgba(239,68,68,0.35); }
+    .pill.purple { background:rgba(168,85,247,0.14); color:#c084fc; border-color:rgba(168,85,247,0.35); }
+    .wrap { max-width:1420px; margin:0 auto; padding:18px 22px 48px; }
+    .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:18px; }
+    .kpi { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+    .kpi small { color:var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:0.5px; }
+    .kpi strong { display:block; font-size:24px; margin-top:4px; }
+    .bar-bg { height:6px; background:var(--panel2); border-radius:999px; overflow:hidden; margin-top:8px; }
+    .bar-fill { height:100%; background:linear-gradient(90deg, var(--accent), var(--green)); transition:width .35s; }
+    .grid { display:grid; grid-template-columns:1.08fr 1fr; gap:16px; align-items:start; }
+    @media(max-width:1020px){ .grid{grid-template-columns:1fr;} }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:14px; }
+    .card-hd { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+    h3 { margin:0; font-size:15px; font-weight:700; }
+    label { display:block; font-size:12px; color:var(--muted); margin:0 0 4px; }
+    input, select, textarea { width:100%; background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:13px; margin-bottom:10px; font-family:inherit; }
+    input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); }
+    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+    .row4 { display:grid; grid-template-columns:1.3fr 1fr 1fr 1fr; gap:8px; }
+    button { background:#0284c7; color:#fff; border:1px solid #38bdf8; padding:8px 13px; border-radius:8px; cursor:pointer; font-weight:600; font-size:12.5px; transition:opacity .15s, transform .05s; }
+    button:hover { opacity:0.92; }
+    button:active { transform:translateY(1px); }
+    button:disabled { opacity:0.45; cursor:not-allowed; }
+    button.sec { background:var(--panel2); border-color:var(--border); color:var(--text); }
+    button.green { background:#15803d; border-color:#22c55e; }
+    button.amber { background:#b45309; border-color:#f59e0b; }
+    button.purple { background:#6b21a8; border-color:#a855f7; }
+    button.red { background:#991b1b; border-color:#ef4444; }
+    button.sm { padding:5px 9px; font-size:11.5px; }
+    .tabs { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+    .tab { background:var(--panel2); border:1px solid var(--border); color:var(--muted); padding:6px 11px; border-radius:8px; font-size:12px; cursor:pointer; font-weight:600; }
+    .tab.active { background:rgba(56,189,248,0.16); color:var(--accent); border-color:var(--accent); }
+    .presets { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+    .hop-row { display:grid; grid-template-columns:110px 1fr 95px 34px; gap:6px; align-items:center; margin-bottom:6px; }
+    .hop-row input, .hop-row select { margin-bottom:0; }
+    .dropzone { border:1px dashed var(--border); border-radius:8px; padding:8px 10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; background:rgba(22,32,58,0.45); font-size:12px; color:var(--muted); }
+    .fee-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:8px; margin-top:10px; }
+    .fee-box { background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; }
+    .fee-box small { color:var(--muted); font-size:10.5px; text-transform:uppercase; }
+    .fee-box div { font-weight:700; font-size:14px; margin-top:2px; }
+    pre { background:#050811; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:11.5px; overflow:auto; max-height:250px; color:#cbd5e1; margin:8px 0 0; }
+    .batch-item { border:1px solid var(--border); background:rgba(22,32,58,0.35); border-radius:10px; padding:12px; margin-bottom:10px; }
+    .batch-hd { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap; }
+    .muted { color:var(--muted); font-size:12px; }
+    .warn-box { background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35); color:#fde68a; border-radius:8px; padding:8px 10px; font-size:12px; margin-top:8px; }
+    .err-box { background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.4); color:#fecaca; border-radius:8px; padding:8px 10px; font-size:12px; margin-top:8px; }
+    .wh-row { display:flex; justify-content:space-between; gap:8px; border-bottom:1px solid var(--border); padding:6px 0; font-size:12px; }
+    .wh-row:last-child { border-bottom:none; }
+    table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+    th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+    th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; }
+    a.link { color:var(--accent); text-decoration:none; font-size:12px; }
+    a.link:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="brand">HOPPAY <span>TREASURY</span></div>
+      <div class="muted">Multi-Destination Solana Payroll, Custom Routes &amp; Agent Treasury Router · MultiHopper v1 API</div>
+    </div>
+    <div class="hdr-right">
+      <span class="pill green" title="Built into MultiHopper smart contracts on mainnet">TRM Labs Screened</span>
+      <span id="envPill" class="pill">Loading...</span>
+      <a class="pill" href="/api/reports/qualifying-volume" target="_blank" style="text-decoration:none;">Volume Proof JSON</a>
+      <button id="authBtn" class="sec sm" style="display:none;" onclick="configureAdminKey()">Operator Key</button>
+      <button id="walletBtn" class="purple" onclick="connectWallet()">Connect Phantom / Solflare</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div id="globalBanner"></div>
+    <div class="kpis" id="kpis"></div>
+
+    <div class="grid">
+      <!-- LEFT: BATCH COMPOSER & CUSTOM ROUTE STUDIO -->
+      <div>
+        <div class="card">
+          <div class="card-hd">
+            <h3>1. Payout Batch Composer</h3>
+            <span class="muted">Auto-merges duplicates · Chunks &gt;20 wallets · MH_017 preflight</span>
+          </div>
+
+          <div class="presets">
+            <button class="sec sm" onclick="loadPreset('dao_sol')">Preset: DAO Payroll (SOL)</button>
+            <button class="sec sm" onclick="loadPreset('agency_usdc')">Preset: Agency USDC</button>
+            <button class="sec sm" onclick="loadPreset('chunk25')">Preset: 25-Wallet Auto-Chunk</button>
+            <button class="sec sm" onclick="loadPreset('high_value')">Preset: Approval Gate ($3.5k+)</button>
+          </div>
+
+          <div class="row2">
+            <div>
+              <label>Batch Name</label>
+              <input id="batchName" value="Nov Contributor Payroll #1" placeholder="e.g. Nov Core Team Payroll" />
+            </div>
+            <div>
+              <label>Treasury Source Owner (Solana Pubkey)</label>
+              <input id="sourceOwner" value="7pBqizvE8vQZ29F49NWSu9cho3s7M9SqJyNN1UoQyQ2u" placeholder="Connect wallet or paste pubkey" />
+            </div>
+          </div>
+
+          <div>
+            <label>Verifiable Business Purpose (Included on Audit Receipts &amp; Qualifying-Volume Report)</label>
+            <input id="businessPurpose" value="Bi-weekly DAO Core Contributor Payroll" placeholder="e.g. Bi-weekly DAO Payroll, Agency Creator Settlement, Vendor Invoice #104" />
+          </div>
+
+          <div class="row4">
+            <div>
+              <label>Asset / Mint</label>
+              <select id="tokenMint" onchange="syncTokenMeta()">
+                <option value="So11111111111111111111111111111111111111112">SOL (9 dec)</option>
+                <option value="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v">USDC Mainnet (6 dec)</option>
+                <option value="4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU">USDC Devnet (6 dec)</option>
+              </select>
+            </div>
+            <div>
+              <label>Fallback Price (USD)</label>
+              <input id="tokenPrice" type="number" step="0.01" min="0.01" value="150.00" />
+            </div>
+            <div>
+              <label>Hops (Auto: 3-10)</label>
+              <input id="hops" type="number" min="3" max="10" value="3" />
+            </div>
+            <div>
+              <label>Arrival (Seconds)</label>
+              <input id="arrivalSec" type="number" min="60" value="600" />
+            </div>
+          </div>
+
+          <!-- ROUTING MODE SELECTOR -->
+          <label>MultiHopper Routing Strategy</label>
+          <div class="tabs">
+            <button id="tabStandard" class="tab active" onclick="setRouteMode('standard')">Auto Multi-Hop</button>
+            <button id="tabCustom" class="tab" onclick="setRouteMode('custom')">Custom Route Builder</button>
+            <button id="tabTemplate" class="tab" onclick="setRouteMode('template')">Saved Route Template</button>
+          </div>
+
+          <div id="customRoutePanel" style="display:none; background:rgba(22,32,58,0.45); border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
+            <div class="card-hd" style="margin-bottom:8px;">
+              <strong style="font-size:12.5px;">Custom Hop Sequence (Bundle or Wallet + waitSeconds)</strong>
+              <div style="display:flex;gap:6px;">
+                <button class="sec sm" onclick="addHopRow('bundle','cex',120)">+ Add Hop</button>
+                <button class="sec sm" onclick="inspectHopLibrary()">Browse Hop Library</button>
+              </div>
+            </div>
+            <div id="customHopsList"></div>
+            <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
+              <input id="newTemplateName" placeholder="Save this route as template (e.g. payroll-stealth)" style="margin-bottom:0;" />
+              <button class="sec sm" style="white-space:nowrap;" onclick="saveRouteTemplate()">Save Template</button>
+            </div>
+            <div id="hopLibOut" class="muted" style="margin-top:6px;"></div>
+          </div>
+
+          <div id="templatePanel" style="display:none; background:rgba(22,32,58,0.45); border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
+            <div class="card-hd" style="margin-bottom:6px;">
+              <strong style="font-size:12.5px;">Reuse Saved MultiHopper Route Template</strong>
+              <button class="sec sm" onclick="loadTemplates()">Refresh</button>
+            </div>
+            <select id="templateSelect" onchange="renderSelectedTemplate()"></select>
+            <div id="templateMeta" class="muted"></div>
+          </div>
+
+          <div class="dropzone">
+            <span>Recipients CSV (<code>wallet,amount,label</code>) — paste below or upload <code>.csv</code></span>
+            <input type="file" id="csvFile" accept=".csv,text/csv" style="width:auto;margin:0;padding:3px 6px;font-size:11.5px;" onchange="handleCsvUpload(event)" />
+          </div>
+          <textarea id="csvBox" rows="6">wallet,amount,label
+3UdgSTpcUbiBSmgdPBiVHRMbcDS731kMT6bAQQZgE3c4,2.5,Lead Rust Dev
+64CuV85HHCydAwxQMoXwZ9HXoyw5qE65NkiJxCtuFErF,1.5,Frontend Contributor
+9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin,1.0,Security Auditor</textarea>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="sec" onclick="runEstimate()">1. Estimate MultiHopper Fees</button>
+            <button class="green" onclick="createBatch()">2. Quote &amp; Build Routes</button>
+          </div>
+
+          <div id="policyBanner"></div>
+          <div id="feeCards" class="fee-grid"></div>
+          <pre id="quoteOut">Click "1. Estimate MultiHopper Fees" to dry-run custom routes, exact fee tier, SOL rent, and 0.25% atomic integrator revenue.</pre>
+        </div>
+
+        <div class="card">
+          <div class="card-hd">
+            <h3>Verified Webhook Audit Log (HMAC-SHA256)</h3>
+            <span class="muted">Idempotent replay protection · All 13 MultiHopper events</span>
+          </div>
+          <div id="webhooksBox" class="muted">No webhooks received yet.</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: ACTIVE BATCHES, SIGNING & RECEIPTS -->
+      <div>
+        <div class="card">
+          <div class="card-hd">
+            <h3>2. Active Routed Payout Batches</h3>
+            <button class="sec sm" onclick="loadOverview()">Refresh</button>
+          </div>
+          <div id="batchesBox" class="muted">No batches yet.</div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd">
+            <h3>3. Non-Custodial Signing &amp; Transfer Inspector</h3>
+            <span id="signerStatus" class="muted">Private keys never leave your wallet</span>
+          </div>
+          <div id="inspectorMeta"></div>
+          <pre id="bundleOut">Select any transfer to Prepare Unsigned Bundle, Sign &amp; Broadcast via Phantom/Solflare, Simulate Settlement (Demo), or Poll Live On-Chain Progress.</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let state = {
+      overview: null,
+      routeMode: 'standard',
+      templates: [],
+      walletProvider: null,
+      walletPubkey: null,
+      customHops: [
+        { type: 'bundle', value: 'cex', waitSeconds: 120 },
+        { type: 'bundle', value: 'dex', waitSeconds: 180 },
+        { type: 'bundle', value: 'kol', waitSeconds: 300 },
+      ],
+    };
+
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function adminKey() {
+      return sessionStorage.getItem('hoppay_admin_key') || '';
+    }
+    function authHeaders(extra = {}) {
+      const k = adminKey();
+      return k ? { ...extra, 'x-hoppay-admin-key': k } : extra;
+    }
+    function configureAdminKey() {
+      const cur = adminKey();
+      const entered = prompt('Enter HOPPAY_ADMIN_TOKEN to unlock mutating treasury actions (leave empty to clear):', cur);
+      if (entered === null) return;
+      if (entered.trim()) sessionStorage.setItem('hoppay_admin_key', entered.trim());
+      else sessionStorage.removeItem('hoppay_admin_key');
+      loadOverview();
+    }
+    function explorerTxLink(sig) {
+      if (!sig || sig.startsWith('demo_') || sig.startsWith('wh_settled_')) return `<code>${esc(sig || '-')}</code>`;
+      const q = state.overview?.explorer_cluster || '';
+      const url = `https://explorer.solana.com/tx/${encodeURIComponent(sig)}${q}`;
+      return `<a class="link" href="${url}" target="_blank" rel="noopener"><code>${esc(sig.slice(0,12))}…</code> ↗</a>`;
+    }
+
+    function syncTokenMeta() {
+      const mint = document.getElementById('tokenMint').value;
+      const isSol = mint.startsWith('So111');
+      document.getElementById('tokenPrice').value = isSol ? '150.00' : '1.00';
+    }
+
+    function tokenCfg() {
+      const mint = document.getElementById('tokenMint').value;
+      const price = Math.max(0.0001, Number(document.getElementById('tokenPrice').value) || 1.0);
+      if (mint.startsWith('So111')) return { mint, symbol: 'SOL', decimals: 9, price };
+      return { mint, symbol: 'USDC', decimals: 6, price };
+    }
+
+    function statusPill(st) {
+      const s = String(st || 'unknown');
+      let cls = '';
+      if (s === 'completed' || s === 'approved') cls = 'green';
+      else if (s === 'awaiting_approval' || s === 'awaiting_signature' || s === 'funding_confirmed') cls = 'amber';
+      else if (s === 'failed' || s === 'partial_failed' || s === 'rejected' || s === 'expired') cls = 'red';
+      else if (s === 'processing' || s === 'active') cls = 'purple';
+      return `<span class="pill ${cls}">${esc(s)}</span>`;
+    }
+
+    // --- WALLET CONNECTION (PHANTOM / SOLFLARE / BACKPACK) ---
+    function detectProvider() {
+      if (window.phantom?.solana?.isPhantom) return { name: 'Phantom', provider: window.phantom.solana };
+      if (window.solflare?.isSolflare) return { name: 'Solflare', provider: window.solflare };
+      if (window.backpack?.solana) return { name: 'Backpack', provider: window.backpack.solana };
+      if (window.solana) return { name: 'Solana Wallet', provider: window.solana };
+      return null;
+    }
+
+    async function connectWallet() {
+      const btn = document.getElementById('walletBtn');
+      if (state.walletPubkey && state.walletProvider) {
+        try { await state.walletProvider.disconnect(); } catch (_) {}
+        state.walletPubkey = null;
+        state.walletProvider = null;
+        btn.textContent = 'Connect Phantom / Solflare';
+        btn.className = 'purple';
+        return;
+      }
+      const detected = detectProvider();
+      if (!detected) {
+        alert('No Solana browser wallet detected (Phantom, Solflare, or Backpack). You can still use Demo Mode or run signer/broadcast_ordered.mjs locally.');
+        return;
+      }
+      try {
+        const resp = await detected.provider.connect();
+        const pk = (resp?.publicKey || detected.provider.publicKey)?.toString();
+        if (!pk) throw new Error('Wallet did not return publicKey');
+        state.walletProvider = detected.provider;
+        state.walletPubkey = pk;
+        document.getElementById('sourceOwner').value = pk;
+        btn.textContent = `${detected.name}: ${pk.slice(0,4)}...${pk.slice(-4)} (Disconnect)`;
+        btn.className = 'green';
+      } catch (err) {
+        alert('Wallet connection failed: ' + err.message);
+      }
+    }
+
+    // --- SCENARIO PRESETS & CSV UPLOAD ---
+    function loadPreset(kind) {
+      if (kind === 'dao_sol') {
+        document.getElementById('batchName').value = 'DAO Core Contributors (SOL)';
+        document.getElementById('tokenMint').value = 'So11111111111111111111111111111111111111112';
+        syncTokenMeta();
+        document.getElementById('csvBox').value = [
+          'wallet,amount,label',
+          '3UdgSTpcUbiBSmgdPBiVHRMbcDS731kMT6bAQQZgE3c4,2.5,Lead Rust Dev',
+          '64CuV85HHCydAwxQMoXwZ9HXoyw5qE65NkiJxCtuFErF,1.5,Protocol Engineer',
+          '9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin,1.0,Security Auditor',
+        ].join('\n');
+      } else if (kind === 'agency_usdc') {
+        document.getElementById('batchName').value = 'Creator Agency Bi-Weekly USDC';
+        document.getElementById('tokenMint').value = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+        syncTokenMeta();
+        document.getElementById('csvBox').value = [
+          'wallet,amount,label',
+          '3UdgSTpcUbiBSmgdPBiVHRMbcDS731kMT6bAQQZgE3c4,850,Creator Lead',
+          '64CuV85HHCydAwxQMoXwZ9HXoyw5qE65NkiJxCtuFErF,620,Video Editor',
+          '9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin,480,Growth Partner',
+        ].join('\n');
+      } else if (kind === 'chunk25') {
+        document.getElementById('batchName').value = '25-Wallet Auto-Chunked Airdrop';
+        document.getElementById('tokenMint').value = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+        syncTokenMeta();
+        const alpha = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+        const rows = ['wallet,amount,label'];
+        for (let i = 0; i < 25; i++) {
+          rows.push(`7pBqizvE8vQZ29F49NWSu9cho3s7M9SqJyNN1UoQ${alpha[i]}${alpha[i+1]},50,Contributor #${i+1}`);
+        }
+        rows.push(`7pBqizvE8vQZ29F49NWSu9cho3s7M9SqJyNN1UoQ${alpha[0]}${alpha[1]},25,Contributor #1 Bonus (Auto-Merged)`);
+        document.getElementById('csvBox').value = rows.join('\n');
+      } else if (kind === 'high_value') {
+        document.getElementById('batchName').value = 'Q4 Treasury Vendor Settlement';
+        document.getElementById('tokenMint').value = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+        syncTokenMeta();
+        document.getElementById('csvBox').value = [
+          'wallet,amount,label',
+          '3UdgSTpcUbiBSmgdPBiVHRMbcDS731kMT6bAQQZgE3c4,2400,Audit Firm Retainer',
+          '64CuV85HHCydAwxQMoXwZ9HXoyw5qE65NkiJxCtuFErF,1600,RPC Infrastructure',
+        ].join('\n');
+      }
+    }
+
+    function handleCsvUpload(ev) {
+      const f = ev.target.files?.[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => { document.getElementById('csvBox').value = String(reader.result || '').trim(); };
+      reader.readAsText(f);
+    }
+
+    // --- CUSTOM ROUTE & TEMPLATE STUDIO ---
+    function setRouteMode(mode) {
+      state.routeMode = mode;
+      document.getElementById('tabStandard').className = 'tab' + (mode === 'standard' ? ' active' : '');
+      document.getElementById('tabCustom').className = 'tab' + (mode === 'custom' ? ' active' : '');
+      document.getElementById('tabTemplate').className = 'tab' + (mode === 'template' ? ' active' : '');
+      document.getElementById('customRoutePanel').style.display = mode === 'custom' ? 'block' : 'none';
+      document.getElementById('templatePanel').style.display = mode === 'template' ? 'block' : 'none';
+      document.getElementById('hops').disabled = mode !== 'standard';
+      document.getElementById('arrivalSec').disabled = mode !== 'standard';
+      if (mode === 'custom') renderCustomHops();
+      if (mode === 'template') loadTemplates();
+    }
+
+    function renderCustomHops() {
+      const el = document.getElementById('customHopsList');
+      el.innerHTML = state.customHops.map((h, i) => `
+        <div class="hop-row">
+          <select onchange="updateHop(${i}, 'type', this.value)">
+            <option value="bundle" ${h.type==='bundle'?'selected':''}>Bundle</option>
+            <option value="wallet" ${h.type==='wallet'?'selected':''}>Wallet</option>
+          </select>
+          ${h.type === 'bundle'
+            ? `<select onchange="updateHop(${i}, 'value', this.value)">
+                 ${['cex','dex','exchanges','kol','contracts','mix'].map(b => `<option value="${b}" ${h.value===b?'selected':''}>${b}</option>`).join('')}
+               </select>`
+            : `<input value="${esc(h.value)}" placeholder="Solana hop wallet address" onchange="updateHop(${i}, 'value', this.value)" />`
+          }
+          <input type="number" min="20" max="2592000" value="${h.waitSeconds}" title="waitSeconds" onchange="updateHop(${i}, 'waitSeconds', Number(this.value))" />
+          <button class="red sm" onclick="removeHop(${i})" title="Remove hop">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    function addHopRow(type, value, waitSeconds) {
+      if (state.customHops.length >= 10) return alert('Max 10 hops per MultiHopper route.');
+      state.customHops.push({ type, value, waitSeconds });
+      renderCustomHops();
+    }
+    function removeHop(idx) {
+      if (state.customHops.length <= 2) return alert('Minimum 2 hops (3 for multi-destination).');
+      state.customHops.splice(idx, 1);
+      renderCustomHops();
+    }
+    function updateHop(idx, field, val) {
+      state.customHops[idx][field] = val;
+      if (field === 'type') {
+        state.customHops[idx].value = val === 'bundle' ? 'cex' : 'DQTf1yf1YM4B48PqJyQ53SEWGDM6ib4YBV7P3wm2MCxj';
+        renderCustomHops();
+      }
+    }
+
+    function buildCustomRoutePayload() {
+      if (state.routeMode === 'custom') {
+        return {
+          route: {
+            hops: state.customHops.map(h => h.type === 'bundle'
+              ? { bundle: h.value, waitSeconds: Number(h.waitSeconds) || 120 }
+              : { wallet: String(h.value).trim(), waitSeconds: Number(h.waitSeconds) || 120 }
+            )
+          }
+        };
+      }
+      if (state.routeMode === 'template') {
+        const tid = Number(document.getElementById('templateSelect').value);
+        if (!tid) throw new Error('Select a saved route template first.');
+        return { route_template_id: tid };
+      }
+      return {};
+    }
+
+    async function inspectHopLibrary() {
+      const box = document.getElementById('hopLibOut');
+      box.textContent = 'Fetching MultiHopper Hop Library...';
+      const r = await fetch('/api/hop-library');
+      const d = await r.json();
+      if (!r.ok) {
+        box.innerHTML = `<div class="warn-box">${esc(d.detail?.code || 'ERR')}: ${esc(d.detail?.message || d.detail)}</div>`;
+        return;
+      }
+      const bundles = (d.bundles || []).map(b => `<code>${esc(b.id)}</code> (${b.available})`).join(' · ');
+      box.innerHTML = `Available bundles: ${bundles} · Sample wallets loaded: ${(d.wallets||[]).length}`;
+    }
+
+    async function loadTemplates() {
+      const r = await fetch('/api/route-templates');
+      const d = await r.json();
+      state.templates = d.items || [];
+      const sel = document.getElementById('templateSelect');
+      sel.innerHTML = state.templates.length
+        ? state.templates.map(t => `<option value="${t.id}">#${t.id} — ${esc(t.name)} (${t.arrivalSeconds}s, ${t.route?.hops?.length||0} hops)</option>`).join('')
+        : '<option value="">No saved templates yet</option>';
+      renderSelectedTemplate();
+    }
+
+    function renderSelectedTemplate() {
+      const tid = Number(document.getElementById('templateSelect').value);
+      const t = state.templates.find(x => x.id === tid);
+      const box = document.getElementById('templateMeta');
+      if (!t) { box.textContent = ''; return; }
+      const hopsStr = (t.route?.hops || []).map(h => `${h.bundle ? 'bundle:'+h.bundle : h.wallet.slice(0,6)+'…'} (${h.waitSeconds}s)`).join(' → ');
+      box.innerHTML = `
+        <div>${esc(t.description || '')}</div>
+        <div style="margin-top:4px;">Hops: <code>${esc(hopsStr)}</code></div>
+        <div style="margin-top:4px;">Usable for: Single=${t.usableFor?.recipientWallet?'Yes':'No'} · Multi-Send=${t.usableFor?.destinations?'Yes':'No'}</div>
+      `;
+    }
+
+    async function saveRouteTemplate() {
+      const name = document.getElementById('newTemplateName').value.trim();
+      if (!name) return alert('Enter a template name first.');
+      const payload = buildCustomRoutePayload();
+      const r = await fetch('/api/route-templates', {
+        method: 'POST', headers: authHeaders({'Content-Type':'application/json'}),
+        body: JSON.stringify({ name, description: 'Saved from HopPay Custom Route Studio', route: payload.route })
+      });
+      const d = await r.json();
+      if (!r.ok) return alert('Failed to save template: ' + JSON.stringify(d.detail));
+      document.getElementById('newTemplateName').value = '';
+      alert(`Saved route template #${d.id} "${d.name}"!`);
+      await loadTemplates();
+    }
+
+    // --- OVERVIEW, ESTIMATE, CREATE BATCH ---
+    async function loadOverview() {
+      const res = await fetch('/api/overview');
+      const d = await res.json();
+      state.overview = d;
+      const envEl = document.getElementById('envPill');
+      envEl.textContent = (d.is_demo_mode ? 'DEMO SIMULATOR' : d.env.toUpperCase()) + ' · ' + d.base_url.replace('https://','');
+      envEl.className = 'pill ' + (d.is_demo_mode ? 'amber' : 'green');
+
+      const authBtn = document.getElementById('authBtn');
+      if (d.auth_enabled) {
+        authBtn.style.display = 'inline-block';
+        authBtn.textContent = adminKey() ? 'Operator Key: Set' : 'Unlock Operator Key';
+        authBtn.className = adminKey() ? 'green sm' : 'amber sm';
+      } else {
+        authBtn.style.display = 'none';
+      }
+
+      const banners = [];
+      if (d.security_warning) banners.push(`<div class="warn-box">Security notice: ${esc(d.security_warning)}</div>`);
+      if (d.usage_error) banners.push(`<div class="warn-box">MultiHopper /usage API notice: ${esc(d.usage_error)}</div>`);
+      document.getElementById('globalBanner').innerHTML = banners.join('');
+
+      const s = d.summary;
+      document.getElementById('kpis').innerHTML = `
+        <div class="kpi">
+          <small>Routed Volume (Settled / Quoted)</small>
+          <strong style="color:var(--accent);">$${s.settled_volume_usd.toLocaleString()} <span class="muted" style="font-size:13px;">/ $${s.total_volume_usd.toLocaleString()}</span></strong>
+          <div class="muted">${s.settled_threshold_pct}% settled of $100k challenge min</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100, s.settled_threshold_pct)}%"></div></div>
+        </div>
+        <div class="kpi">
+          <small>Integrator Rev Share (0.25%)</small>
+          <strong style="color:var(--green);">$${s.settled_integrator_rev_usd.toLocaleString()} <span class="muted" style="font-size:13px;">est $${s.estimated_integrator_rev_usd.toLocaleString()}</span></strong>
+          <div class="muted">Paid atomically on-chain ($2.5k / $1M)</div>
+        </div>
+        <div class="kpi">
+          <small>Payout Batches &amp; Guardrails</small>
+          <strong>${s.completed_batches}/${s.batch_count} <span class="muted" style="font-size:13px;">completed</span></strong>
+          <div class="muted">${s.total_recipients} wallets · ${s.pending_approval_count} awaiting approval</div>
+        </div>
+        <div class="kpi">
+          <small>Verified HMAC Webhooks</small>
+          <strong style="color:var(--amber);">${d.webhook_events.length}</strong>
+          <div class="muted">Approval gate &ge; $${d.policy_config.approval_threshold_usd.toLocaleString()}</div>
+        </div>
+      `;
+
+      document.getElementById('batchesBox').innerHTML = d.batches.length ? d.batches.map(b => `
+        <div class="batch-item">
+          <div class="batch-hd">
+            <div>
+              <strong>${esc(b.batch_name)}</strong> · <span style="color:var(--green);">$${b.total_usd.toLocaleString()}</span>
+              <span class="muted">(${b.recipient_count} wallets · ${b.chunk_count} route${b.chunk_count>1?'s':''} · ${esc(b.routing_mode)})</span>
+            </div>
+            <div>${statusPill(b.status)}</div>
+          </div>
+          <div class="muted" style="margin-top:4px;">
+            Batch <code>${esc(b.id)}</code> · Purpose: ${esc(b.business_purpose || 'Contributor Payroll')} · Rev Share: <strong>$${b.estimated_integrator_rev_usd}</strong>
+            ${b.approved_by ? `· Approved by <strong>${esc(b.approved_by)}</strong>` : ''}
+            · <a class="link" href="/api/batches/${esc(b.id)}/export.csv" target="_blank">Receipt CSV</a>
+            · <a class="link" href="/api/batches/${esc(b.id)}/export.json" target="_blank">JSON</a>
+          </div>
+          ${b.status === 'awaiting_approval' ? `
+            <div class="warn-box" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span>Human approval required (&ge; $${d.policy_config.approval_threshold_usd.toLocaleString()}) before signing.</span>
+              <div style="display:flex;gap:6px;">
+                <button class="green sm" onclick="approveBatch('${esc(b.id)}')">Approve Batch</button>
+                <button class="red sm" onclick="rejectBatch('${esc(b.id)}')">Reject</button>
+              </div>
+            </div>
+          ` : ''}
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+            ${b.transfers.map(t => `
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:7px 9px;">
+                <div style="font-size:12px;">
+                  <strong>Transfer #${t.id}</strong> ${statusPill(t.status)}
+                  <span class="muted">${esc(t.amountTokens)} ${esc(b.token_symbol)} · ${t.hops} hops · ${t.destinationCount ? t.destinationCount+' dests' : '1 recipient'}</span>
+                </div>
+                <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                  <button class="sec sm" onclick="prepareTx('${esc(b.id)}', ${t.id})">Prepare</button>
+                  ${d.is_demo_mode
+                    ? `<button class="green sm" onclick="demoSimulateSettle(${t.id})">Simulate Settle</button>`
+                    : `<button class="purple sm" onclick="signAndBroadcastInBrowser(${t.id})">Sign in Wallet</button>`
+                  }
+                  ${['quote','expired','failed','awaiting_signature'].includes(String(t.status))
+                    ? `<button class="amber sm" onclick="requoteTransfer('${esc(b.id)}', ${t.id})" title="Re-quote after MH_040 tier shift or expiry">Re-Quote</button>`
+                    : ''
+                  }
+                  <button class="sec sm" onclick="pollTransfer(${t.id})">Inspect</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('') : '<div class="muted">No batches created yet. Use a preset on the left and click "2. Quote &amp; Build Routes".</div>';
+
+      document.getElementById('webhooksBox').innerHTML = d.webhook_events.length ? d.webhook_events.map(w => `
+        <div class="wh-row">
+          <div><code>${esc(w.event_type)}</code> · Transfer #${esc(w.transfer_id)}</div>
+          <div class="muted">${esc(w.received_at.slice(0,19).replace('T',' '))}Z</div>
+        </div>
+      `).join('') : '<div class="muted">No webhooks received yet.</div>';
+    }
+
+    async function parseCsv(tokenDecimals = 9) {
+      const r = await fetch('/api/csv/parse', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ csv_text: document.getElementById('csvBox').value, token_decimals: tokenDecimals })
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || 'CSV parse error');
+      return d;
+    }
+
+    async function runEstimate() {
+      document.getElementById('policyBanner').innerHTML = '';
+      try {
+        const tk = tokenCfg();
+        const parsed = await parseCsv(tk.decimals);
+        const uniqueN = parsed.summary?.unique_count || parsed.recipients.length;
+        const amountRaw = parsed.summary?.total_raw || '0';
+        const routeExtra = buildCustomRoutePayload();
+        const body = {
+          token_mint: tk.mint,
+          amount_raw: amountRaw,
+          token_decimals: tk.decimals,
+          destination_count: uniqueN > 1 ? Math.min(20, uniqueN) : null,
+          token_price_usd: tk.price,
+          ...routeExtra,
+        };
+        if (state.routeMode === 'standard') {
+          body.hops = Number(document.getElementById('hops').value);
+          body.arrival_seconds = Number(document.getElementById('arrivalSec').value);
+        } else {
+          body.hops = null;
+          body.arrival_seconds = null;
+        }
+        const r = await fetch('/api/estimate', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+        });
+        const d = await r.json();
+        if (!r.ok) {
+          document.getElementById('feeCards').innerHTML = '';
+          document.getElementById('policyBanner').innerHTML = `<div class="err-box">${esc(d.detail?.code || 'ERROR')}: ${esc(d.detail?.message || JSON.stringify(d.detail))}</div>`;
+          document.getElementById('quoteOut').textContent = JSON.stringify(d, null, 2);
+          return;
+        }
+        const revUsd = ((Number(d.integratorPercentShare) / Math.pow(10, tk.decimals)) * tk.price).toFixed(4);
+        const upfrontSol = (Number(d.sol?.requiredSolUpFrontLamports || 0) / 1e9).toFixed(4);
+        const refundSol = (Number(d.sol?.refundableLamports || 0) / 1e9).toFixed(4);
+        const screenSol = (Number(d.sol?.breakdown?.screeningFeeLamports || 0) / 1e9).toFixed(4);
+        document.getElementById('feeCards').innerHTML = `
+          <div class="fee-box"><small>Fee Tier</small><div>${esc(d.tier)} (${d.percentFeeBps/100}%)</div></div>
+          <div class="fee-box"><small>Integrator Share (0.25%)</small><div style="color:var(--green);">$${revUsd}</div></div>
+          <div class="fee-box"><small>Upfront SOL Needed</small><div>${upfrontSol} SOL</div></div>
+          <div class="fee-box"><small>Refundable / TRM Screen</small><div style="color:var(--accent);">${refundSol} / ${screenSol} SOL</div></div>
+        `;
+        document.getElementById('quoteOut').textContent = JSON.stringify(d, null, 2);
+      } catch (e) {
+        document.getElementById('policyBanner').innerHTML = `<div class="err-box">${esc(e.message)}</div>`;
+      }
+    }
+
+    async function createBatch() {
+      document.getElementById('policyBanner').innerHTML = '';
+      try {
+        const tk = tokenCfg();
+        const parsed = await parseCsv(tk.decimals);
+        const routeExtra = buildCustomRoutePayload();
+        const r = await fetch('/api/batches', {
+          method:'POST', headers: authHeaders({'Content-Type':'application/json'}),
+          body: JSON.stringify({
+            batch_name: document.getElementById('batchName').value.trim(),
+            business_purpose: document.getElementById('businessPurpose').value.trim() || 'Contributor Payroll',
+            source_owner: document.getElementById('sourceOwner').value.trim(),
+            token_mint: tk.mint, token_symbol: tk.symbol, token_decimals: tk.decimals,
+            token_price_usd: tk.price,
+            hops: Number(document.getElementById('hops').value),
+            arrival_seconds: Number(document.getElementById('arrivalSec').value),
+            recipients: parsed.recipients,
+            ...routeExtra,
+          })
+        });
+        const d = await r.json();
+        document.getElementById('quoteOut').textContent = JSON.stringify(d, null, 2);
+        if (!r.ok) {
+          const msgs = d.detail?.policy?.violations || [d.detail?.message || d.detail];
+          document.getElementById('policyBanner').innerHTML = `<div class="err-box">${msgs.map(esc).join('<br/>')}</div>`;
+          return;
+        }
+        if (d.policy?.warnings?.length) {
+          document.getElementById('policyBanner').innerHTML = `<div class="warn-box">${d.policy.warnings.map(esc).join('<br/>')}</div>`;
+        }
+        await loadOverview();
+      } catch (e) {
+        document.getElementById('policyBanner').innerHTML = `<div class="err-box">${esc(e.message)}</div>`;
+      }
+    }
+
+    async function approveBatch(batchId) {
+      const approver = prompt('Approver name / role for audit log:', 'Treasury Lead') || 'Treasury Lead';
+      const r = await fetch(`/api/batches/${batchId}/approve`, {
+        method:'POST', headers: authHeaders({'Content-Type':'application/json'}),
+        body: JSON.stringify({ approver })
+      });
+      if (!r.ok) alert('Approve failed: ' + JSON.stringify(await r.json()));
+      await loadOverview();
+    }
+
+    async function rejectBatch(batchId) {
+      const reason = prompt('Reason for rejecting batch:', 'Cancelled by treasury') || 'Cancelled';
+      const r = await fetch(`/api/batches/${batchId}/reject`, {
+        method:'POST', headers: authHeaders({'Content-Type':'application/json'}),
+        body: JSON.stringify({ reason })
+      });
+      if (!r.ok) alert('Reject failed: ' + JSON.stringify(await r.json()));
+      await loadOverview();
+    }
+
+    async function requoteTransfer(batchId, transferId) {
+      document.getElementById('inspectorMeta').innerHTML = `<div class="muted">Re-quoting Transfer #${transferId} on MultiHopper...</div>`;
+      const r = await fetch(`/api/batches/${batchId}/transfers/${transferId}/requote`, {
+        method:'POST', headers: authHeaders()
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        document.getElementById('inspectorMeta').innerHTML = `<div class="err-box">${esc(d.detail?.code || 'ERR')}: ${esc(d.detail?.message || JSON.stringify(d.detail))}</div>`;
+      } else {
+        document.getElementById('inspectorMeta').innerHTML = `<div class="pill green" style="display:inline-block;">Re-quoted Transfer #${transferId} &rarr; #${d.new_transfer.id} (fresh tier &amp; expiry)</div>`;
+      }
+      document.getElementById('bundleOut').textContent = JSON.stringify(d, null, 2);
+      await loadOverview();
+    }
+
+    async function prepareTx(batchId, id) {
+      const r = await fetch(`/api/transfers/${id}/prepare`, { method:'POST', headers: authHeaders() });
+      const d = await r.json();
+      if (r.ok) {
+        document.getElementById('inspectorMeta').innerHTML = `<div class="muted">CLI broadcast option: <code>node signer/broadcast_ordered.mjs ${id} --poll</code> or <code>python signer/broadcast_ordered.py ${id} --poll</code></div>`;
+      } else if (d.detail?.requote_available && batchId) {
+        document.getElementById('inspectorMeta').innerHTML = `
+          <div class="err-box" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span>${esc(d.detail.code)}: ${esc(d.detail.message)}</span>
+            <button class="amber sm" onclick="requoteTransfer('${esc(batchId)}', ${id})">Re-Quote Transfer</button>
+          </div>`;
+      } else {
+        document.getElementById('inspectorMeta').innerHTML = `<div class="err-box">${esc(d.detail?.code || 'ERR')}: ${esc(d.detail?.message || JSON.stringify(d.detail))}</div>`;
+      }
+      document.getElementById('bundleOut').textContent = JSON.stringify(d, null, 2);
+      await loadOverview();
+    }
+
+    async function demoSimulateSettle(id) {
+      const out = document.getElementById('bundleOut');
+      document.getElementById('inspectorMeta').innerHTML = '<div class="muted">Running full MultiHopper two-stage protocol + HMAC webhook settlement...</div>';
+      const r = await fetch(`/api/demo/transfers/${id}/simulate-settle`, { method:'POST', headers: authHeaders() });
+      const d = await r.json();
+      if (!r.ok) {
+        document.getElementById('inspectorMeta').innerHTML = `<div class="err-box">${esc(d.detail?.code || 'BLOCKED')}: ${esc(d.detail?.message || JSON.stringify(d.detail))}</div>`;
+      } else {
+        document.getElementById('inspectorMeta').innerHTML = `<div class="pill green" style="display:inline-block;">Transfer #${id} Settled (All hops + destinations paid + HMAC verified)</div>`;
+      }
+      out.textContent = JSON.stringify(d, null, 2);
+      await loadOverview();
+    }
+
+    async function pollTransfer(id) {
+      const r = await fetch(`/api/transfers/${id}`);
+      const d = await r.json();
+      if (!r.ok) {
+        document.getElementById('inspectorMeta').innerHTML = `<div class="err-box">${esc(JSON.stringify(d.detail))}</div>`;
+        return;
+      }
+      const prog = d.progress ? `${d.progress.hopsCompleted}/${d.progress.hopsTotal} hops` : '';
+      let html = `<div style="margin-bottom:6px;"><strong>Transfer #${d.id}</strong> ${statusPill(d.status)} <span class="muted">Phase: ${esc(d.phase || '-')} · ${esc(prog)} · Bundle: ${esc(d.supportBundleId || '-')}</span></div>`;
+      if (d.destinations?.length) {
+        html += `<table><thead><tr><th>Destination</th><th>Net Raw</th><th>Status</th><th>Payout Sig</th></tr></thead><tbody>` +
+          d.destinations.map(x => `<tr><td><code>${esc(x.wallet.slice(0,6))}…${esc(x.wallet.slice(-4))}</code></td><td>${esc(x.amountRaw)}</td><td>${esc(x.status)}</td><td>${explorerTxLink(x.payoutSignature)}</td></tr>`).join('') +
+          `</tbody></table>`;
+      } else if (d.signatures?.hops?.length) {
+        const lastSig = d.signatures.hops[d.signatures.hops.length - 1];
+        html += `<div class="muted">Final hop signature: ${explorerTxLink(lastSig)}</div>`;
+      }
+      document.getElementById('inspectorMeta').innerHTML = html;
+      document.getElementById('bundleOut').textContent = JSON.stringify(d, null, 2);
+      await loadOverview();
+    }
+
+    // --- REAL NON-CUSTODIAL BROWSER SIGNING (PHANTOM / SOLFLARE) ---
+    async function signAndBroadcastInBrowser(transferId) {
+      const out = document.getElementById('bundleOut');
+      const log = (msg) => { out.textContent += (out.textContent ? '\n' : '') + msg; };
+      out.textContent = '';
+
+      if (!state.walletProvider || !state.walletPubkey) {
+        await connectWallet();
+        if (!state.walletProvider) return;
+      }
+      log(`[1/6] Loading @solana/web3.js & connecting RPC (${state.overview.solana_rpc_url})...`);
+      const web3 = await import('https://esm.sh/@solana/web3.js@1.98.0');
+      const connection = new web3.Connection(state.overview.solana_rpc_url, 'confirmed');
+      const b64ToBytes = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+
+      async function sendTx(b64, isLegacy, label) {
+        const bytes = b64ToBytes(b64);
+        const tx = isLegacy ? web3.Transaction.from(bytes) : web3.VersionedTransaction.deserialize(bytes);
+        const signed = await state.walletProvider.signTransaction(tx);
+        const raw = isLegacy ? signed.serialize({ requireAllSignatures: false }) : signed.serialize();
+        const sig = await connection.sendRawTransaction(raw, { skipPreflight: false });
+        log(`  -> ${label} sent: ${sig} (waiting confirmed...)`);
+        await connection.confirmTransaction(sig, 'confirmed');
+        return sig;
+      }
+
+      // Accumulate signatures across resume attempts so MH_041 / blockhash retries never lose earlier sigs
+      let keeperFundingSignature = null;
+      let orchestratorInitSignature = null;
+      const allRouteSigs = [];
+      const allSessionSigs = [];
+      const allDispersionSigs = [];
+
+      try {
+        for (let attempt = 1; attempt <= 4; attempt++) {
+          log(`[2/6] POST /api/transfers/${transferId}/prepare (attempt ${attempt}/4)...`);
+          const prepRes = await fetch(`/api/transfers/${transferId}/prepare`, {
+            method:'POST', headers: authHeaders()
+          });
+          const prep = await prepRes.json();
+          if (!prepRes.ok) {
+            if (prep.detail?.code === 'MH_040') {
+              throw new Error('MH_040 tier shifted since quote. Click "Re-Quote" on this transfer and try again.');
+            }
+            throw new Error(prep.detail?.message || JSON.stringify(prep.detail));
+          }
+          const ptx = prep.preparedTxs;
+          if (ptx.resume?.nothingToDo) {
+            log('All on-chain accounts already initialized.');
+            if (allRouteSigs.length) {
+              const cf = await fetch(`/api/transfers/${transferId}/confirm-broadcast`, {
+                method:'POST', headers: authHeaders({'Content-Type':'application/json'}),
+                body: JSON.stringify({
+                  route_init_signatures: allRouteSigs,
+                  keeper_funding_signature: keeperFundingSignature,
+                  orchestrator_init_signature: orchestratorInitSignature,
+                  session_init_signatures: allSessionSigs.length ? allSessionSigs : null,
+                  dispersion_init_signatures: allDispersionSigs.length ? allDispersionSigs : null,
+                })
+              });
+              log('Final confirm-broadcast result: ' + await cf.text());
+            }
+            break;
+          }
+
+          try {
+            if (ptx.keeperFundingTx) {
+              log('[3/6] Broadcasting keeperFundingTx FIRST...');
+              keeperFundingSignature = await sendTx(ptx.keeperFundingTx, false, 'keeperFundingTx');
+              const c1 = await fetch(`/api/transfers/${transferId}/confirm-broadcast`, {
+                method:'POST', headers: authHeaders({'Content-Type':'application/json'}),
+                body: JSON.stringify({ route_init_signatures: [], keeper_funding_signature: keeperFundingSignature })
+              });
+              if (!c1.ok) throw new Error('Intermediate confirm failed: ' + await c1.text());
+              log('  -> Intermediate confirm-broadcast recorded.');
+            }
+
+            const rList = ptx.routeInitTxs || [];
+            for (let i = 0; i < rList.length; i++) {
+              const b64 = typeof rList[i] === 'string' ? rList[i] : rList[i].base64;
+              allRouteSigs.push(await sendTx(b64, false, `routeInitTxs[${i}]`));
+              if (i < rList.length - 1) await sleep(3000);
+            }
+            if (rList.length) await sleep(3000);
+
+            if (ptx.orchestratorInitTx) {
+              orchestratorInitSignature = await sendTx(ptx.orchestratorInitTx, true, 'orchestratorInitTx');
+              await sleep(3000);
+            }
+
+            for (let i = 0; i < (ptx.sessionInitTxs || []).length; i++) {
+              allSessionSigs.push(await sendTx(ptx.sessionInitTxs[i], false, `sessionInitTxs[${i}]`));
+            }
+
+            for (let i = 0; i < (ptx.dispersionInitTxs || []).length; i++) {
+              allDispersionSigs.push(await sendTx(ptx.dispersionInitTxs[i], false, `dispersionInitTxs[${i}]`));
+            }
+
+            log('[6/6] Submitting final confirm-broadcast...');
+            const c2 = await fetch(`/api/transfers/${transferId}/confirm-broadcast`, {
+              method:'POST', headers: authHeaders({'Content-Type':'application/json'}),
+              body: JSON.stringify({
+                route_init_signatures: allRouteSigs,
+                keeper_funding_signature: keeperFundingSignature,
+                orchestrator_init_signature: orchestratorInitSignature,
+                session_init_signatures: allSessionSigs.length ? allSessionSigs : null,
+                dispersion_init_signatures: allDispersionSigs.length ? allDispersionSigs : null,
+              })
+            });
+            const c2Json = await c2.json();
+            if (c2.ok) {
+              log('SUCCESS! Transfer is now processing on Solana: ' + JSON.stringify(c2Json));
+              break;
+            }
+            if (c2Json?.detail?.code === 'MH_041' && attempt < 4) {
+              log('MH_041 received (partial dispersion binding); re-calling /prepare to finish...');
+              await sleep(2000);
+              continue;
+            }
+            throw new Error(c2Json?.detail?.message || JSON.stringify(c2Json));
+          } catch (innerErr) {
+            const em = String(innerErr.message || '');
+            const retryable = em.includes('Blockhash not found') || em.includes('block height exceeded') || em.includes('TransactionExpiredBlockheightExceededError');
+            if (retryable && attempt < 4) {
+              log(`Retryable RPC expiry (${em}); resuming via fresh /prepare...`);
+              await sleep(2000);
+              continue;
+            }
+            throw innerErr;
+          }
+        }
+      } catch (err) {
+        log('ERROR: ' + err.message);
+      }
+      await loadOverview();
+    }
+
+    loadOverview();
+  </script>
+</body>
+</html>
